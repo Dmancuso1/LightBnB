@@ -107,13 +107,6 @@ exports.getAllReservations = getAllReservations;
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = function(options, limit) {
-  // console.log(
-  //   options.city,
-  //   options.owner_id,
-  //   options.minimum_price_per_night, 
-  //   options.maximum_price_per_night, 
-  //   options.minimum_rating
-  // );
 
   //1
   const queryParams = [];

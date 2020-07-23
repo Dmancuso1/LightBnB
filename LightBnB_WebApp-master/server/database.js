@@ -88,14 +88,17 @@ const getAllReservations = function(guest_id, limit) {
   LIMIT $2;
   `
   return pool.query(queryStringResos, [guest_id, limit = 10])
-  .then(res => {
-    console.log(res.rows[0]); 
-    return res.rows;
-  });
+  .then(res => res.rows);
 }
 exports.getAllReservations = getAllReservations;
 
+
+
+
 /// Properties
+
+
+
 
 /**
  * Get all properties.
@@ -104,13 +107,61 @@ exports.getAllReservations = getAllReservations;
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = function(options, limit) {
-  return pool.query(`
-  SELECT * FROM properties
-  LIMIT $1
-  `, [limit = 10])
+  // console.log(
+  //   options.city,
+  //   options.owner_id,
+  //   options.minimum_price_per_night, 
+  //   options.maximum_price_per_night, 
+  //   options.minimum_rating
+  // );
+
+  //1
+  const queryParams = [];
+
+  //2
+let queryString = 
+` SELECT properties.*, avg(property_reviews.rating) as  average_rating
+  FROM properties
+  JOIN property_reviews ON properties.id = property_id
+  `;
+
+  if (!options.city) {
+    options.city = 'Montreal'
+  } 
+
+  queryString += `WHERE city LIKE $1`
+  queryParams.push(`%${options.city}%`)
+  // console.log(options.minimum_price_per_night)
+  if (options.minimum_price_per_night && options.maximum_price_per_night) {
+    queryString += ` AND (cost_per_night > $2 AND cost_per_night < $3)`
+    queryParams.push(`${options.minimum_price_per_night * 100}`)
+    queryParams.push(`${options.maximum_price_per_night * 100}`)
+  } 
+  
+  queryString += `
+  GROUP BY properties.id`;
+
+  if(options.minimum_rating) {
+    queryString += ` HAVING avg(property_reviews.rating) >= $4`
+    queryParams.push(`${options.minimum_rating}`)
+  }
+
+  queryParams.push(limit);
+  queryString += `
+  ORDER BY cost_per_night
+  LIMIT $${queryParams.length};
+  `;
+
+  // console.log(queryString, queryParams)
+
+  return pool.query(queryString, queryParams)
   .then(res => res.rows);
 }
 exports.getAllProperties = getAllProperties
+
+
+
+
 
 /**
  * Add a property to the database
